@@ -121,7 +121,10 @@ function checkStairs(cards: Card[]): boolean {
   const nonJokers = cards.filter(c => !c.isJoker);
   const jokerCount = cards.filter(c => c.isJoker).length;
 
-  if (nonJokers.length < 2) return false;
+  if (nonJokers.length < 1) return false;
+
+  const total = nonJokers.length + jokerCount;
+  if (total < 3) return false;
 
   const suits = [...new Set(nonJokers.map(c => c.suit))];
   if (suits.length !== 1) return false;
@@ -135,9 +138,12 @@ function checkStairs(cards: Card[]): boolean {
 
   const minIndex = rankIndices[0];
   const maxIndex = rankIndices[rankIndices.length - 1];
-  const expectedLength = maxIndex - minIndex + 1;
+  const span = maxIndex - minIndex + 1;
 
-  return nonJokers.length + jokerCount === expectedLength;
+  // Non-joker cards must form a contiguous range when jokers fill the gaps.
+  // The span must not exceed total (jokers can fill gaps within the range).
+  // If total > span, jokers extend the sequence beyond the non-joker range.
+  return span <= total;
 }
 
 function checkDoubleStairs(cards: Card[]): boolean {
@@ -804,12 +810,16 @@ function findStairs(hand: Card[]): Card[][] {
         if (missingCount > jokers.length) continue;
         
         const stairCards: Card[] = [];
+        let jokerUsed = 0;
         for (let idx = start; idx < end; idx++) {
           const rank = CARD_RANKS_NORMAL[idx];
           if (rankSet.has(rank)) {
             stairCards.push(suitCards.get(rank)!);
           } else {
-            stairCards.push(jokers.pop()!);
+            if (jokerUsed < jokers.length) {
+              stairCards.push(jokers[jokerUsed]);
+            }
+            jokerUsed++;
           }
         }
         
